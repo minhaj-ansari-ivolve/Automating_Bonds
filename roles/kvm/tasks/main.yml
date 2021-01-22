@@ -1,0 +1,43 @@
+---
+- name: Installing KVM
+  command: "{{ item }}"
+  loop:
+    - dnf module install virt
+    - dnf install virt-install virt-viewer libguestfs-tools
+    - dnf install git
+
+- name: Enable and Start Services
+  command: "{{ item }}"
+  loop:
+    - systemctl enable libvirtd.service
+    - systemctl start libvirtd.service 
+
+- name: Install Dependencies
+  command: "dnf -y install genisoimage virt-install libguestfs-tools-c qemu-img libvirt-client wget libosinfo"
+
+- name: Download CentOS 8 iso image
+  command: "wget http://repo.inara.pk/centos/8.3.2011/isos/x86_64/{{ vm_iso }}"
+
+- name: Moving Image
+  command: "mv {{ vm_iso }} /var/lib/libvirt/boot/{{ vm_iso }}"
+  
+- name: Adding libvirt to root group
+  command: "usermod -aG libvirt root"
+    
+- name: Adding VM Automation File
+  template:
+    src: create_vm.sh.j2    
+    dest: /root/create_vm.sh
+    
+- name: Making bash file executable
+  command: "chmod +x /root/create_vm.sh"
+  
+- name: Executing Bash file
+  shell: ./create_vm.sh
+#  register: displayvm
+#  failed_when: displayvm.rc != 1 and displayvm.rc != 0
+
+#- name: Creating VM on KVM
+#  shell: "virt-install --name {{ vm_name }} --memory={{ vm_ram }} --vcpus={{ vm_vcpu }} --os-type {{ vm_type }} --location /home/#{{ vm_username }}/{{ vm_iso }} --disk size={{ vm_disk }} --network bridge={{ vm_bridge }} --graphics=none --os-variant={{ vm_variant }} --#console pty,target_type=serial -x 'console=ttyS0,115200n8 serial' -x 'ks=http://{{ user_ip }}/anaconda-ks.cfg'"
+
+

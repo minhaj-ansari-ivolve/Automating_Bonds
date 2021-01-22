@@ -1,0 +1,94 @@
+---
+- name: Configure a slave interface using eth0/interface
+  template:
+#    src: /mytemplates/ifcfg-eth0.j2
+    src: ifcfg-eth0.j2    
+    dest: /etc/sysconfig/network-scripts/ifcfg-{{ interface0 }}
+    
+- name: Configure a slave interface using eth1/interface
+  template:
+#    src: /mytemplates/ifcfg-eth1.j2
+    src: ifcfg-eth1.j2
+    dest: /etc/sysconfig/network-scripts/ifcfg-{{ interface1 }}
+
+- name: Configure a channel bonding interface ifcfg-bond0
+  template:
+#    src: /mytemplates/ifcfg-bond0.j2
+    src: ifcfg-bond0.j2
+    dest: /etc/sysconfig/network-scripts/ifcfg-{{ bond_name0 }}
+    
+- name: Restart Network
+  command: "systemctl restart NetworkManager.service"
+
+- name: Bring the bond on the server as root
+  command: "ifup {{ bond_name0 }}"
+  register: displaybond
+  ignore_errors: true
+
+- name: View the bond configuration details
+  command: "cat /proc/net/bonding/{{ bond_name0 }}"
+  register: displayconfig
+  
+- debug: msg="{{displayconfig.stdout_lines}}"
+
+- name: View IP Addr details
+  command: "ip addr"
+  register: displayip
+  
+- debug: msg="{{displayip.stdout_lines}}"
+
+- name: Create VLAN interface file bond0.192
+  template:
+#    src: /mytemplates/ifcfg-bond0.192.j2
+    src: ifcfg-bond0.192.j2
+    dest: /etc/sysconfig/network-scripts/ifcfg-{{ vlan1_name }}
+    
+- name: Bring up the VLAN interface as root
+  command: "ifup {{ vlan1_name }}"
+  register: displayvlan
+  
+- debug: msg="{{displayvlan.stdout_lines}}"
+
+- name: Creating Bridge
+  command: "{{ item }}"
+  loop:
+    - nmcli con add ifname {{ bridge_name }} type bridge con-name {{ bridge_name }}
+    - nmcli con add type bridge-slave ifname {{ interface0 }} master {{ bridge_name }} 
+    - nmcli con add type bridge-slave ifname {{ interface0 }} master {{ bridge_name }}
+    
+- name: Enable STP
+  command: "nmcli con modify {{ bridge_name }} bridge.stp yes"
+
+- name: Check Bridge
+  command: "nmcli -f bridge con show {{ bridge_name }}"
+  register: checkbridge
+  
+- debug: msg="{{checkbridge.stdout_lines}}"  
+  
+- name: IPv4 Bridge Setup
+  command: "{{ item }}"
+  loop:
+    - nmcli connection modify {{ bridge_name }} ipv4.addresses '{{ bridge_ip }}'
+    - nmcli connection modify {{ bridge_name }} ipv4.gateway '{{ bridge_gateway }}' 
+    - nmcli connection modify {{ bridge_name }} ipv4.dns '{{ bridge_dns }}'
+    - nmcli connection modify {{ bridge_name }} ipv4.dns-search '{{ bridge_dns_search}} '
+    - nmcli connection modify {{ bridge_name }} ipv4.method manual  
+    
+- name: Enable Network Bridge
+  command: "nmcli con up {{ bridge_name }}"
+  
+- name: Display Details
+  command: "ip a"
+  register: displaybridge
+  
+- debug: msg="{{displaybridge.stdout_lines}}"
+
+- name: Verify Bridge
+  command: "nmcli connection"
+  register: verifybridge
+  
+- debug: msg="{{verifybridge.stdout_lines}}"
+
+
+
+

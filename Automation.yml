@@ -1,0 +1,57 @@
+- name: "Automating Bonds and Bridges"
+  hosts: all
+  user: root	 			#Change the user according to the Machine Name
+  gather_facts: true
+  become: true
+  vars:
+    interface0: ens224
+    interface1: ens256
+    bond_name0: bond0
+    bond_slave0: slave0
+    bond_slave1: slave1
+    ip_bond: 192.168.100.100
+    net_mask: 255.255.255.0
+    bonding_options: '"mode=active-backup miimon=100"'
+    vlan1_name: bond0.192
+    vlan1_ip: 192.168.10.1
+    bridge_name: br0
+    bridge_ip: 192.168.2.19/24
+    bridge_gateway: 192.168.2.254
+    bridge_dns: 192.168.2.254
+    bridge_dns_search: sweet.home
+  roles:
+    - automation
+    
+- name: "Hosting ks.cfg file on webserver"
+  hosts: all
+  user: root	 			#Change the user according to the Machine Name
+  gather_facts: true
+  become: true
+  vars:
+    ks_device: ens192
+    ks_gateway: 10.81.1.250
+    ks_ip: 192.168.24.10
+    ks_nameserver: 8.8.8.8
+    ks_netmask: 255.255.255.0
+    ks_hostname: minhaj
+    ks_user: stack
+  roles:
+    - ksfile
+    
+- name: "Creating VM on KVM"
+  hosts: all
+  user: root	 			#Change the user according to the Machine Name
+  gather_facts: true
+  become: true
+  vars:				#Password of the machine will be "123"
+    vm_name: testvm
+    vm_ram: 1024
+    vm_vcpu: 1
+    vm_type: linux
+    vm_iso: CentOS-8.3.2011-x86_64-dvd1.iso
+    vm_disk: 5
+    vm_bridge: br0
+    vm_variant: rhel8.0
+    user_ip: 10.81.1.71		#Edit the machine's ip (Localhost ip of vm) (IP stated in hosts file of ansible)
+  roles:
+    - kvm

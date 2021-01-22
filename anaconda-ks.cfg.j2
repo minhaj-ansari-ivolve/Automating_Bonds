@@ -1,0 +1,48 @@
+#version=DEVEL
+# System authorization information
+auth --enableshadow --passalgo=sha512
+# Use CDROM installation media
+cdrom
+# Use graphical install
+graphical
+# Run the Setup Agent on first boot
+firstboot --enable
+ignoredisk --only-use=sda
+# Keyboard layouts
+keyboard --vckeymap=us --xlayouts='us'
+# System language
+lang en_US.UTF-8
+
+# Network information
+network  --bootproto=static --device={{ ks_device }} --gateway={{ ks_gateway }} --ip={{ ks_ip }} --nameserver={{ ks_nameserver }} --netmask={{ ks_netmask }} --onboot=off --ipv6=auto --no-activate
+network  --hostname={{ ks_hostname }}
+
+# Root password
+rootpw --iscrypted $6$Iy.JUXI/6E1eubbV$C/Vj4MhlHo1gfWWhJaPMpY6Hyasah8BZy.Ue6Cxykt7IlVnQSH9tJvs5Sdh03RL2vu.XGjCBrpurAq/tZPrFx.
+# System services
+services --disabled="chronyd"
+# System timezone
+timezone Asia/Karachi --isUtc --nontp
+user --name={{ ks_user }} --password=$6$tvK6rg7EfumKUudj$RwFwszmpnyIeDG56hdjmSRk64paqYylD4WfazjPoqdJfx2sCYhrAWhyt61FelhvtkjCWOTbbxRtAfaJRD3qHI. --iscrypted --gecos="{{ ks_user }}"
+# System bootloader configuration
+bootloader --append=" crashkernel=auto" --location=mbr --boot-drive=sda
+autopart --type=lvm
+# Partition clearing information
+clearpart --none --initlabel
+
+%packages
+@^minimal
+@core
+kexec-tools
+
+%end
+
+%addon com_redhat_kdump --enable --reserve-mb='auto'
+
+%end
+
+%anaconda
+pwpolicy root --minlen=6 --minquality=1 --notstrict --nochanges --notempty
+pwpolicy user --minlen=6 --minquality=1 --notstrict --nochanges --emptyok
+pwpolicy luks --minlen=6 --minquality=1 --notstrict --nochanges --notempty
+%end

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+# Creating VM
+
+sudo virt-install \
+     --name {{ vm_name }} \
+     --memory={{ vm_ram }} \
+     --vcpus={{ vm_vcpu }} \
+     --os-type {{ vm_type }} \
+     --location=/var/lib/libvirt/boot/{{ vm_iso }} \
+     --disk size={{ vm_disk }}  \
+     --network bridge={{ vm_bridge }} \
+     --graphics=none \
+     --os-variant={{ vm_variant }} \
+     --console pty,target_type=serial \
+     -x 'console=ttyS0,115200n8 serial' \
+     -x "ks=http://{{ user_ip }}/anaconda-ks.cfg"

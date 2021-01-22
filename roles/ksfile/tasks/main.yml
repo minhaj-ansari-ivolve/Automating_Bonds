@@ -1,0 +1,19 @@
+---
+- name: Installing NGINX
+  command: "{{ item }}"
+  loop:
+    - dnf install -y nginx
+    - systemctl enable nginx 
+    - systemctl start nginx
+
+- name: Hosting CentOS 8 Kickstart File
+  template:
+    src: anaconda-ks.cfg.j2
+    dest: /usr/share/nginx/html/anaconda-ks.cfg
+    
+- name: Restarting NGINX Server
+  command: "systemctl restart nginx"
+
+- name: Disabling Firewall
+  command: "systemctl stop firewalld"
+
